@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator - Sabhi Jawab</title>
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+  }
+
+  .calculator {
+    width: min(420px, 95vw);
+    background: #111827;
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  }
+
+  .display {
+    background: #020617;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: right;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  #expression {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    color: #94a3b8;
+    font-size: 1.1rem;
+    text-align: right;
+    outline: none;
+    overflow-x: auto;
+  }
+
+  #result {
+    color: #f8fafc;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-top: 8px;
+    min-height: 2.4rem;
+    overflow-x: auto;
+  }
+
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  button {
+    border: 0;
+    border-radius: 14px;
+    padding: 16px 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    background: #1e293b;
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+
+  button:hover {
+    background: #334155;
+    transform: translateY(-1px);
+  }
+
+  button:active {
+    transform: scale(0.97);
+  }
+
+  button[data-action="equals"] {
+    background: #2563eb;
+    color: #fff;
+  }
+
+  button[data-action="equals"]:hover {
+    background: #1d4ed8;
+  }
+
+  button[data-action="clear"],
+  button[data-action="backspace"] {
+    background: #7f1d1d;
+    color: #fecaca;
+  }
+
+  button[data-value="÷"],
+  button[data-value="×"],
+  button[data-value="-"],
+  button[data-value="+"] {
+    background: #312e81;
+    color: #c7d2fe;
+  }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="display">
+    <input type="text" id="expression" readonly placeholder="0">
+    <div id="result">0</div>
+  </div>
+
+  <div class="keys">
+    <button data-action="clear">C</button>
+    <button data-action="backspace">⌫</button>
+    <button data-value="(">(</button>
+    <button data-value=")">)</button>
+
+    <button data-value="sin(">sin</button>
+    <button data-value="cos(">cos</button>
+    <button data-value="tan(">tan</button>
+    <button data-value="÷">÷</button>
+
+    <button data-value="7">7</button>
+    <button data-value="8">8</button>
+    <button data-value="9">9</button>
+    <button data-value="×">×</button>
+
+    <button data-value="4">4</button>
+    <button data-value="5">5</button>
+    <button data-value="6">6</button>
+    <button data-value="-">-</button>
+
+    <button data-value="1">1</button>
+    <button data-value="2">2</button>
+    <button data-value="3">3</button>
+    <button data-value="+">+</button>
+
+    <button data-value="0">0</button>
+    <button data-value=".">.</button>
+    <button data-value="%">%</button>
+    <button data-action="equals">=</button>
+
+    <button data-value="√(">√</button>
+    <button data-value="^">^</button>
+    <button data-value="π">π</button>
+    <button data-value="e">e</button>
+
+    <button data-value="log(">log</button>
+    <button data-value="ln(">ln</button>
+    <button data-value="^2">x²</button>
+    <button data-action="toggle-sign">±</button>
+  </div>
+</div>
+
+<script>
+  const exprInput = document.getElementById('expression');
+  const resultDiv = document.getElementById('result');
+  let expression = '';
+  let isDeg = true; // true = degrees, false = radians
+
+  function toRadians(x) {
+    return isDeg ? x * Math.PI / 180 : x;
+  }
+
+  function evaluate(expr) {
+    let e = expr;
+
+    // Symbols ko JS math me convert karo
+    e = e.replace(/×/g, '*')
+         .replace(/÷/g, '/')
+         .replace(/−/g, '-')
+         .replace(/π/g, 'pi')
+         .replace(/√/g, 'sqrt')
+         .replace(/\^/g, '**')
+         .replace(/%/g, '/100');
+
+    // Implicit multiplication: 2(3) => 2*(3), )( => )*(
+    e = e.replace(/(\d)(\()/g, '$1*$2');
+    e = e.replace(/(\))(\d)/g, '$1*$2');
+    e = e.replace(/(\))(\()/g, '$1*$2');
+
+    const sin = (x) => Math.sin(toRadians(x));
+    const cos = (x) => Math.cos(toRadians(x));
+    const tan = (x) => Math.tan(toRadians(x));
+    const sqrt = Math.sqrt;
+    const log = Math.log10;
+    const ln = Math.log;
+    const pi = Math.PI;
+    const eConst = Math.E;
+
+    const fn = new Function(
+      'sin', 'cos', 'tan', 'sqrt', 'log', 'ln', 'pi', 'e',
+      `return (${e})`
+    );
+
+    return fn(sin, cos, tan, sqrt, log, ln, pi, eConst);
+  }
+
+  function updateDisplay() {
+    exprInput.value = expression || '0';
+
+    if (!expression) {
+      resultDiv.textContent = '0';
+      return;
+    }
+
+    try {
+      const res = evaluate(expression);
+      resultDiv.textContent = Number.isFinite(res) ? res : 'Error';
+    } catch {
+      resultDiv.textContent = '';
+    }
+  }
+
+  function toggleSign() {
+    if (!expression) return;
+
+    const match = expression.match(/(\d+\.?\d*)$/);
+
+    if (match) {
+      const num = match[0];
+      const start = expression.length - num.length;
+
+      if (expression[start - 1] === '-') {
+        expression = expression.slice(0, start - 1) + num;
+      } else {
+        expression = expression.slice(0, start) + '(-' + num + ')';
+      }
+    } else {
+      expression = expression.startsWith('-')
+        ? expression.slice(1)
+        : '-' + expression;
+    }
+
+    updateDisplay();
+  }
+
+  document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.value;
+      const action = btn.dataset.action;
+
+      if (value !== undefined) {
+        expression += value;
+        updateDisplay();
+      } else if (action === 'clear') {
+        expression = '';
+        updateDisplay();
+      } else if (action === 'backspace') {
+        expression = expression.slice(0, -1);
+        updateDisplay();
+      } else if (action === 'equals') {
+        try {
+          const res = evaluate(expression);
+          expression = String(res);
+          updateDisplay();
+        } catch {
+          resultDiv.textContent = 'Error';
+        }
+      } else if (action === 'toggle-sign') {
+        toggleSign();
+      }
+    });
+  });
+
+  // Keyboard support
+  window.addEventListener('keydown', (e) => {
+    const key = e.key;
+
+    if (/[0-9+\-*/.()]/.test(key)) {
+      if (key === '*') expression += '×';
+      else if (key === '/') expression += '÷';
+      else expression += key;
+      updateDisplay();
+    } else if (key === 'Enter' || key === '=') {
+      e.preventDefault();
+      try {
+        const res = evaluate(expression);
+        expression = String(res);
+        updateDisplay();
+      } catch {
+        resultDiv.textContent = 'Error';
+      }
+    } else if (key === 'Backspace') {
+      expression = expression.slice(0, -1);
+      updateDisplay();
+    } else if (key === 'Escape') {
+      expression = '';
+      updateDisplay();
+    }
+  });
+
+  updateDisplay();
+</script>
+
+</body>
+</html>
